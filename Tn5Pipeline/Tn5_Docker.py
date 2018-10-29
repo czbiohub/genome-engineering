@@ -321,7 +321,8 @@ def run(folder_path):
 
 
 			# generate picard stats
-			process6 = Popen(["docker","run","-v","/home/ubuntu/:/DATA","-w","/DATA","fjukstad/picard","CollectWgsMetrics","COVERAGE_CAP=100000","SAMPLE_SIZE=5000","I="+cut_bam_path,"R="+cut_ref_path,"O="+picard_wgs_metrics],stdout=PIPE)
+			#####PICARD NOT WORKING
+			process6 = Popen(["docker","run","-v","/home/ubuntu/:/DATA","-w","/DATA","fjukstad/picard","CollectWgsMetrics","COVERAGE_CAP=100000","SAMPLE_SIZE=5000","I="+cut_bam_path,"R="+cut_ref_path,"O="+cut_picard_wgs_metrics],stdout=PIPE)
 			process6.communicate()
 			process6.wait()
 			stats =[]
