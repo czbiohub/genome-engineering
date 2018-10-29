@@ -215,7 +215,7 @@ def run(folder_path):
 					p.wait()
 
 				#Conversion of .sam to .bam
-				with open(cut_sorted_bam, "w") as f2:
+				with open(sorted_bam, "w") as f2:
 					process2 = Popen(["docker","run","-v","/home/ubuntu/:/DATA","-w","/DATA","fjukstad/samtools", "sort",cut_output_sam],stdout=f2)
 					process2.communicate()
 					process2.wait()
