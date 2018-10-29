@@ -127,7 +127,7 @@ def run(folder_path):
 			os.chdir(folder_path)
 			outputs = [trimmed_R1_path,unpaired_R1_path,trimmed_R2_path,unpaired_R2_path]
 
-			x = Popen(["sudo", "docker", "pull", "fjukstad/trimmomatic"])
+			
 
 
 
