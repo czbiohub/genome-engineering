@@ -20,8 +20,8 @@ if __name__ == "__main__":
 if (master_folder_path[-1]=="/"):
 	master_folder_path=master_folder_path[:-1]
 
-# path for trimmomatic IN lucyimage    
-#trimmomatic_path = "/home/ubuntu/anaconda/share/trimmomatic-0.36-5/trimmomatic.jar"
+
+##Need to add to reflow script
 adapter_path = "NexteraPE-PE.fa"
 picard_path = "/home/ubuntu/anaconda/share/picard-2.18.15-0/picard.jar"
 
@@ -106,9 +106,17 @@ def run(folder_path):
 	
 
 	def dockerpulls():
-		p = Popen(["sudo", "docker", "pull", "fjukstad/trimmomatic"])
+		p = Popen(["docker", "pull", "fjukstad/trimmomatic"])
 		p.communicate()
 		p.wait()
+
+		q = Popen(["docker", "pull", "fjukstad/bwa"])
+		q.communicate()
+		q.wait()
+
+		r = Popen(["docker", "pull", "fjukstad/samtools"])
+		r.communicate()
+		r.wait()		
 
 		return None
 
@@ -165,6 +173,7 @@ def run(folder_path):
 
 	d1[fasta_path] = sorted_trimmed_fqs
 
+
 	def aln_to_ref(fa_fq_dict):
 
 		for key in fa_fq_dict:
@@ -181,20 +190,36 @@ def run(folder_path):
 				
 				#Use system to call BWA
 				#index reference
-				process1 = call(["bwa", "index",ref_path], stdout = PIPE) # index reference
+
+				cut_ref_path = ref_path.split("/home/ubuntu/")
+				cut_ref_path = cut_ref_path[1]
+
+				cut_fq_fwd_path = fq_fwd_path.split("/home/ubuntu/")
+				cut_fq_fwd_path = cut_fq_fwd_path[1]
+
+				cut_fq_rev_path = fq_rev_path.split("/home/ubuntu/")
+				cut_fq_rev_path = cut_fq_rev_path[1]
+
+				cut_output_sam = output_sam.split("/home/ubuntu/")
+				cut_output_sam = cut_output_sam[1]
+
+				cut_sorted_bam = sorted_bam.split("/home/ubuntu/")
+				cut_sorted_bam = cut_sorted_bam[1]
+
+				process1 = call(["docker","run","-v","/home/ubuntu/:/DATA","-w","/DATA","fjukstad/bwa", "index",cut_ref_path], stdout = PIPE) # index reference
 
 				# generate sam files
 				with open(output_sam, "w") as f1:
-					p = Popen(["bwa","mem",ref_path,fq_fwd_path,fq_rev_path],stdout=f1)
+					p = Popen(["docker","run","-v","/home/ubuntu/:/DATA","-w","/DATA","fjukstad/bwa","mem",cut_ref_path,cut_fq_fwd_path,cut_fq_rev_path],stdout=f1)
 					p.communicate()
 					p.wait()
 
 				#Conversion of .sam to .bam
-				with open(sorted_bam, "w") as f2:
-					process2 = Popen(["samtools", "sort",output_sam],stdout=f2)
+				with open(cut_sorted_bam, "w") as f2:
+					process2 = Popen(["docker","run","-v","/home/ubuntu/:/DATA","-w","/DATA","fjukstad/samtools", "sort",cut_output_sam],stdout=f2)
 					process2.communicate()
 					process2.wait()
-					process3 = Popen(["samtools", "index",sorted_bam])
+					process3 = Popen(["docker","run","-v","/home/ubuntu/:/DATA","-w","/DATA","fjukstad/samtools", "index",cut_sorted_bam])
 				
 		return None
 		
