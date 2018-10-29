@@ -23,7 +23,6 @@ if (master_folder_path[-1]=="/"):
 
 ##Need to add to reflow script
 adapter_path = "NexteraPE-PE.fa"
-picard_path = "/home/ubuntu/anaconda/share/picard-2.18.15-0/picard.jar"
 
 # your trimmomatic parameters
 lead_score=str(3)
@@ -116,7 +115,16 @@ def run(folder_path):
 
 		r = Popen(["docker", "pull", "fjukstad/samtools"])
 		r.communicate()
-		r.wait()		
+		r.wait()
+
+		s = Popen(["docker", "pull", "biocontainers/bcftools"])
+		s.communicate()
+		s.wait()
+
+		t = Popen(["docker", "pull", "fjukstad/picard/"])
+		t.communicate()
+		t.wait()
+
 
 		return None
 
@@ -226,7 +234,7 @@ def run(folder_path):
 
 	aln_to_ref(d1)
 
-
+	#######Dockerized to here
 	
 
 	bam_list = []
@@ -241,7 +249,12 @@ def run(folder_path):
 		
 		for entry in bam_file_list:
 			flagstat_txt = open(folder_path+"/"+entry.split(".bam")[0]+"_flagstats.txt","w")
-			process3 = Popen(["samtools","flagstat",folder_path+"/"+entry],stdout=PIPE)
+
+			cut_folder_path = folder_path.split("/home/ubuntu/")
+			cut_folder_path = cut_folder_path[1]
+
+			process3 = Popen(["docker","run","-v","/home/ubuntu/:/DATA","-w","/DATA","fjukstad/samtools","flagstat",cut_folder_path+"/"+entry],stdout=PIPE)
+			
 			a = process3.stdout.read().decode("utf-8")
 			flagstat_txt.write(entry.split(".bam")[0] + "\n")
 			flagstat_txt.write("%s\n" % a)
@@ -273,27 +286,42 @@ def run(folder_path):
 			parsed_picard_wgs_output = folder_path + "/" + name + "_" + "picard_wgs_parsed.csv"
 			consensus = folder_path + "/" + name + "_" + "consensus.fq"
 			
+			cut_ref_path = ref_path.split("/home/ubuntu/")
+			cut_ref_path = cut_ref_path[1]
+
+			cut_bam_path = bam_path.split("/home/ubuntu/")
+			cut_bam_path = cut_bam_path[1]
+
 			# write mpileup file
 			with open(mpileup_file, "w") as f2:
-				process2 = Popen(["bcftools", "mpileup","-f",ref_path, bam_path],stdout=f2)
+				process2 = Popen(["docker","run","-v","/home/ubuntu/:/DATA","-w","/DATA","biocontainers/bcftools", "mpileup","-f",cut_ref_path, cut_bam_path],stdout=f2)
 				process2.communicate()
 				process2.wait()
 
+			cut_mpileup_file = mpileup_file.split("/home/ubuntu/")
+			cut_mpileup_file = cut_mpileup_file[1]
+
 			# generate vcf files
 			with open(vcf_file,"w") as f3:
-				process3 = Popen(["bcftools","call","-c",mpileup_file],stdout=f3)
+				process3 = Popen(["docker","run","-v","/home/ubuntu/:/DATA","-w","/DATA","biocontainers/bcftools","call","-c",cut_mpileup_file],stdout=f3)
 				process3.communicate()
 				process3.wait()
 			
+			cut_vcf_file = vcf_file.split("/home/ubuntu/")
+			cut_vcf_file = cut_vcf_file[1]
 			
 			# generate stats
 			with open(stats_file,"w") as f5:
-				process5 = Popen(["bcftools","stats",vcf_file],stdout=f5)
+				process5 = Popen(["docker","run","-v","/home/ubuntu/:/DATA","-w","/DATA","biocontainers/bcftools","stats",cut_vcf_file],stdout=f5)
 				process5.communicate()
 				process5.wait()
 
+			cut_picard_wgs_metrics = picard_wgs_metrics.split("/home/ubuntu/")
+			cut_picard_wgs_metrics = cut_picard_wgs_metrics[1]
+
+
 			# generate picard stats
-			process6 = Popen(["java","-Xmx2048m", "-jar",picard_path,"CollectWgsMetrics","COVERAGE_CAP=100000","USE_FAST_ALGORITHM=True","SAMPLE_SIZE=5000","I="+bam_path,"R="+ref_path,"O="+picard_wgs_metrics],stdout=PIPE)
+			process6 = Popen(["docker","run","-v","/home/ubuntu/:/DATA","-w","/DATA","fjukstad/picard","CollectWgsMetrics","COVERAGE_CAP=100000","USE_FAST_ALGORITHM=True","SAMPLE_SIZE=5000","I="+cut_bam_path,"R="+cut_ref_path,"O="+picard_wgs_metrics],stdout=PIPE)
 			process6.communicate()
 			process6.wait()
 			stats =[]
@@ -308,8 +336,14 @@ def run(folder_path):
 				for i in range(len(stat_titles)):
 					writer.writerow([stat_titles[i],stat_values[i]])
 
+			cut_picard_size_hist = picard_size_hist.split("/home/ubuntu/")
+			cut_picard_size_hist = cut_picard_size_hist[1]
+
+			cut_picard_size_metrics = picard_size_metrics.split("/home/ubuntu/")
+			cut_picard_size_metrics = cut_picard_size_metrics[1]
+
 			# generate picard insert size stats
-			process7 = Popen(["java","-Xmx2048m", "-jar",picard_path,"CollectInsertSizeMetrics","I="+bam_path,"H="+picard_size_hist,"O="+picard_size_metrics],stdout=PIPE)
+			process7 = Popen(["docker","run","-v","/home/ubuntu/:/DATA","-w","/DATA","fjukstad/picard","CollectInsertSizeMetrics","I="+cut_bam_path,"H="+cut_picard_size_hist,"O="+cut_picard_size_metrics],stdout=PIPE)
 			process7.communicate()
 			process7.wait()
 
@@ -336,6 +370,7 @@ for sub_folder in glob.glob(master_folder_path+"/*"):
 	else:
 		run("/home/ubuntu/" + sub_folder)
 
+#no dockerization here
 def compile_files(data_folder):
 
 	for folder in glob.glob("/home/ubuntu/"+master_folder_path+"/*"):
