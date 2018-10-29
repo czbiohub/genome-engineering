@@ -23,7 +23,7 @@ if (master_folder_path[-1]=="/"):
 # path for trimmomatic IN lucyimage    
 #trimmomatic_path = "/home/ubuntu/anaconda/share/trimmomatic-0.36-5/trimmomatic.jar"
 adapter_path = "NexteraPE-PE.fa"
-picard_path = "/home/ubuntu/anaconda/share/picard-2.18.14-0/picard.jar"
+picard_path = "/home/ubuntu/anaconda/share/picard-2.18.15-0/picard.jar"
 
 # your trimmomatic parameters
 lead_score=str(3)
