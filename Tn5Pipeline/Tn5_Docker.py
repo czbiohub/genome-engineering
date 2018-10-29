@@ -22,7 +22,7 @@ if (master_folder_path[-1]=="/"):
 
 # path for trimmomatic IN lucyimage    
 #trimmomatic_path = "/home/ubuntu/anaconda/share/trimmomatic-0.36-5/trimmomatic.jar"
-adapter_path = "/home/ubuntu/anaconda/pkgs/trimmomatic-0.36-5/share/trimmomatic-0.36-5/adapters/NexteraPE-PE.fa"
+adapter_path = "NexteraPE-PE.fa"
 picard_path = "/home/ubuntu/anaconda/share/picard-2.18.14-0/picard.jar"
 
 # your trimmomatic parameters
@@ -128,11 +128,23 @@ def run(folder_path):
 			outputs = [trimmed_R1_path,unpaired_R1_path,trimmed_R2_path,unpaired_R2_path]
 
 			
+			cut_folder_path = folder_path.split("/home/ubuntu/")
+			cut_folder_path = cut_folder_path[1]
 
+			cut_trimmed_R1_path = trimmed_R1_path.split("/home/ubuntu/")
+			cut_trimmed_R1_path = cut_trimmed_R1_path[1]
 
+			cut_trimmed_R2_path = trimmed_R2_path.split("/home/ubuntu/")
+			cut_trimmed_R2_path = cut_trimmed_R2_path[1]
 
-			p = Popen(["sudo","docker","run","fjukstad/trimmomatic","PE","-phred33",folder_path+"/"+fwd_read,folder_path+"/"+rev_read,
-				trimmed_R1_path,unpaired_R1_path,trimmed_R2_path,unpaired_R2_path,"ILLUMINACLIP:"+adapter_path
+			cut_unpaired_R1_path = unpaired_R1_path.split("/home/ubuntu/")
+			cut_unpaired_R1_path = cut_unpaired_R1_path[1]
+
+			cut_unpaired_R2_path = unpaired_R2_path.split("/home/ubuntu/")
+			cut_unpaired_R2_path = cut_unpaired_R2_path[1]
+
+			p = Popen(["sudo","docker","run","-v","/home/ubuntu/:/DATA","-w","/DATA","fjukstad/trimmomatic","PE","-phred33",cut_folder_path+"/"+fwd_read,cut_folder_path+"/"+rev_read,
+				cut_trimmed_R1_path,cut_unpaired_R1_path,cut_trimmed_R2_path,cut_unpaired_R2_path,"ILLUMINACLIP:"+adapter_path
 				+":4:20:10","LEADING:"+lead_score,"TRAILING:"+trail_score,"SLIDINGWINDOW:"+wind_size+":"+wind_qual,
 				"MINLEN:"+min_len],stdout=PIPE)
 			p.communicate()
@@ -441,5 +453,9 @@ def compile_files(data_folder):
 				shutil.move(old,new)
 
 	return None
+
+	#rm non-called fastq in current (but not subdirectories)
+	#rename output - summary stats
+
 
 compile_files(master_folder_path)
